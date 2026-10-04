@@ -1,7 +1,12 @@
 import 'package:firebase_core/firebase_core.dart';
 import 'package:flutter/material.dart';
+import 'package:go_router/go_router.dart';
+import 'package:provider/provider.dart';
+
 import 'app/router.dart';
+import 'data/repositories/auth_repository.dart';
 import 'firebase_options.dart';
+import 'ui/auth/auth_view_model.dart';
 import 'ui/core/app_theme.dart';
 
 Future<void> main() async {
@@ -9,11 +14,25 @@ Future<void> main() async {
   await Firebase.initializeApp(
     options: DefaultFirebaseOptions.currentPlatform,
   );
-  runApp(const PinangMateApp());
+
+  final authRepo = AuthRepository();
+  final authVm = AuthViewModel(authRepo);
+
+  runApp(
+    MultiProvider(
+      providers: [
+        Provider<AuthRepository>.value(value: authRepo),
+        ChangeNotifierProvider<AuthViewModel>.value(value: authVm),
+      ],
+      child: PinangMateApp(router: createRouter(authVm)),
+    ),
+  );
 }
 
 class PinangMateApp extends StatelessWidget {
-  const PinangMateApp({super.key});
+  const PinangMateApp({super.key, required this.router});
+
+  final GoRouter router;
 
   @override
   Widget build(BuildContext context) {
@@ -22,7 +41,7 @@ class PinangMateApp extends StatelessWidget {
       theme: AppTheme.light,
       darkTheme: AppTheme.dark,
       themeMode: ThemeMode.system,
-      routerConfig: appRouter,
+      routerConfig: router,
     );
   }
 }
