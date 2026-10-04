@@ -21,6 +21,9 @@ class AuthViewModel extends ChangeNotifier {
   AuthStatus status = AuthStatus.idle;
   String? error;
 
+  // BARU: hanya berubah saat status login berubah. Dipakai router.
+  final ValueNotifier<int> routerRefresh = ValueNotifier<int>(0);
+
   bool get loggedIn => user != null;
   bool get loading => status == AuthStatus.loading;
 
@@ -36,6 +39,7 @@ class AuthViewModel extends ChangeNotifier {
     }
     ready = true;
     notifyListeners();
+    routerRefresh.value++; // BARU
   }
 
   Future<bool> login(String email, String password) =>
@@ -99,6 +103,7 @@ class AuthViewModel extends ChangeNotifier {
   @override
   void dispose() {
     _sub?.cancel();
+    routerRefresh.dispose(); // BARU
     super.dispose();
   }
 }

@@ -1,3 +1,4 @@
+import 'package:go_router/go_router.dart';
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 
@@ -16,6 +17,13 @@ String? _validatePassword(String? v) {
   if (v == null || v.isEmpty) return 'Kata sandi wajib diisi';
   if (v.length < 6) return 'Minimal 6 karakter';
   return null;
+}
+void _afterAuth(BuildContext context) {
+  if (context.canPop()) {
+    context.pop(); // kembali ke halaman asal (mis. tab Rencana)
+  } else {
+    context.go('/');
+  }
 }
 
 class LoginPage extends StatelessWidget {
@@ -49,6 +57,11 @@ class LoginPage extends StatelessWidget {
                   const Expanded(
                     child: TabBarView(children: [_LoginForm(), _RegisterForm()]),
                   ),
+                  TextButton(
+                    onPressed: () => context.go('/'),
+                    child: const Text('Jelajahi dulu tanpa akun'),
+                  ),
+                  const SizedBox(height: 8),
                 ],
               ),
             ),
@@ -79,11 +92,12 @@ class _LoginFormState extends State<_LoginForm> {
     super.dispose();
   }
 
-  Future<void> _submit() async {
+   Future<void> _submit() async {
     if (!_key.currentState!.validate()) return;
-    await context
+    final ok = await context
         .read<AuthViewModel>()
         .login(_email.text.trim(), _password.text);
+    if (ok && mounted) _afterAuth(context);
   }
 
   @override
@@ -182,13 +196,14 @@ class _RegisterFormState extends State<_RegisterForm> {
     super.dispose();
   }
 
-  Future<void> _submit() async {
+    Future<void> _submit() async {
     if (!_key.currentState!.validate()) return;
-    await context.read<AuthViewModel>().register(
+    final ok = await context.read<AuthViewModel>().register(
           _nama.text.trim(),
           _email.text.trim(),
           _password.text,
         );
+    if (ok && mounted) _afterAuth(context);
   }
 
   @override

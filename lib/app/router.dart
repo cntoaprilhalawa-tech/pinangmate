@@ -1,9 +1,12 @@
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 
+import '../ui/auth/akun_page.dart';
+import '../ui/auth/auth_gate.dart';
 import '../ui/auth/auth_view_model.dart';
 import '../ui/auth/login_page.dart';
-import '../ui/home/home_temp_page.dart';
+import '../ui/core/app_shell.dart';
+import '../ui/home/beranda_page.dart';
 
 class PlaceholderPage extends StatelessWidget {
   final String title;
@@ -19,15 +22,12 @@ class PlaceholderPage extends StatelessWidget {
 GoRouter createRouter(AuthViewModel auth) {
   return GoRouter(
     initialLocation: '/splash',
-    refreshListenable: auth,
+       refreshListenable: auth.routerRefresh,
     redirect: (context, state) {
       final loc = state.matchedLocation;
-      // Tunggu status login pertama diketahui.
       if (!auth.ready) return loc == '/splash' ? null : '/splash';
-      if (loc == '/splash') return auth.loggedIn ? '/' : '/login';
+      if (loc == '/splash') return '/';
       if (auth.loggedIn && loc == '/login') return '/';
-      // Sementara: beranda hanya untuk yang login. Nanti tamu boleh masuk.
-      if (!auth.loggedIn && loc == '/') return '/login';
       return null;
     },
     routes: [
@@ -37,10 +37,48 @@ GoRouter createRouter(AuthViewModel auth) {
             const Scaffold(body: Center(child: CircularProgressIndicator())),
       ),
       GoRoute(path: '/login', builder: (c, s) => const LoginPage()),
-      GoRoute(path: '/', builder: (c, s) => const HomeTempPage()),
-      GoRoute(
-        path: '/kategori/:jenis',
-        builder: (c, s) => PlaceholderPage('Daftar ${s.pathParameters['jenis']}'),
+      StatefulShellRoute.indexedStack(
+        builder: (context, state, shell) => AppShell(shell: shell),
+        branches: [
+          StatefulShellBranch(routes: [
+            GoRoute(
+              path: '/',
+              builder: (c, s) => const BerandaPage(),
+              routes: [
+                GoRoute(
+                  path: 'kategori/:jenis',
+                  builder: (c, s) =>
+                      PlaceholderPage('Daftar ${s.pathParameters['jenis']}'),
+                ),
+              ],
+            ),
+          ]),
+          StatefulShellBranch(routes: [
+            GoRoute(
+              path: '/rencana',
+              builder: (c, s) =>
+                  const AuthGate(child: PlaceholderPage('Form Paket Rencana')),
+              routes: [
+                GoRoute(
+                  path: 'hasil',
+                  builder: (c, s) => const AuthGate(
+                    child: PlaceholderPage('Hasil Itinerary'),
+                  ),
+                ),
+              ],
+            ),
+          ]),
+          StatefulShellBranch(routes: [
+            GoRoute(
+              path: '/wishlist',
+              builder: (c, s) =>
+                  const AuthGate(child: PlaceholderPage('Wishlist')),
+            ),
+          ]),
+          StatefulShellBranch(routes: [
+            GoRoute(path: '/akun', builder: (c, s) => const AkunPage()),
+          ]),
+        ],
       ),
       GoRoute(
         path: '/item/:id',
@@ -50,19 +88,6 @@ GoRouter createRouter(AuthViewModel auth) {
         path: '/beri-nilai/:id',
         builder: (c, s) => const PlaceholderPage('Beri Nilai'),
       ),
-      GoRoute(
-        path: '/rencana',
-        builder: (c, s) => const PlaceholderPage('Form Paket Rencana'),
-      ),
-      GoRoute(
-        path: '/rencana/hasil',
-        builder: (c, s) => const PlaceholderPage('Hasil Itinerary'),
-      ),
-      GoRoute(
-        path: '/wishlist',
-        builder: (c, s) => const PlaceholderPage('Wishlist'),
-      ),
-      GoRoute(path: '/akun', builder: (c, s) => const PlaceholderPage('Akun')),
       GoRoute(path: '/admin', builder: (c, s) => const PlaceholderPage('Admin')),
       GoRoute(
         path: '/admin/form',
