@@ -9,9 +9,18 @@ class BerandaPage extends StatelessWidget {
     return Scaffold(
       appBar: AppBar(title: const Text('Beranda (sementara)')),
       body: Center(
-        child: FilledButton(
-          onPressed: () => context.push('/kategori/wisata'),
-          child: const Text('Lihat daftar wisata'),
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            for (final k in const ['wisata', 'penginapan', 'kuliner', 'event'])
+              Padding(
+                padding: const EdgeInsets.symmetric(vertical: 6),
+                child: FilledButton(
+                  onPressed: () => context.push('/kategori/$k'),
+                  child: Text('Lihat daftar $k'),
+                ),
+              ),
+          ],
         ),
       ),
     );

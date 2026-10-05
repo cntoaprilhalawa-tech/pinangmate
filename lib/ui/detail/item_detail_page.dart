@@ -5,6 +5,7 @@ import '../../data/models/item.dart';
 import '../../data/repositories/item_repository.dart';
 import '../core/formatters.dart';
 import '../core/item_card.dart';
+import '../core/item_labels.dart';
 import '../core/load_status.dart';
 import '../core/state_views.dart';
 import 'item_detail_view_model.dart';
@@ -60,7 +61,10 @@ class _DetailContent extends StatelessWidget {
   Widget build(BuildContext context) {
     final cs = Theme.of(context).colorScheme;
     final text = Theme.of(context).textTheme;
-    final hasJam = item.jamBuka != null && item.jamTutup != null;
+    final isEvent = item.kategori == Kategori.event;
+    final hasJam = !isEvent && item.jamBuka != null && item.jamTutup != null;
+    final tanggal = tanggalLabel(item);
+    final harga = hargaLabel(item);
 
     final footer = <String>[
       if (item.updatedAt != null)
@@ -105,6 +109,13 @@ class _DetailContent extends StatelessWidget {
                           formatRating(item.ratingAvg, item.ratingCount),
                         ),
                       ),
+                      if (tanggal != null)
+                        Chip(
+                          avatar: const Icon(Icons.event, size: 18),
+                          label: Text(tanggal),
+                        ),
+                      if (isEvent && tanggal != null)
+                        Chip(label: EventBadge(item: item)),
                       if (hasJam)
                         Chip(
                           avatar: const Icon(Icons.schedule, size: 18),
@@ -119,10 +130,11 @@ class _DetailContent extends StatelessWidget {
                             ],
                           ),
                         ),
-                      Chip(
-                        avatar: const Icon(Icons.sell_outlined, size: 18),
-                        label: Text(formatRupiah(item.harga)),
-                      ),
+                      if (harga != null)
+                        Chip(
+                          avatar: const Icon(Icons.sell_outlined, size: 18),
+                          label: Text(harga),
+                        ),
                     ],
                   ),
                   const SizedBox(height: 16),

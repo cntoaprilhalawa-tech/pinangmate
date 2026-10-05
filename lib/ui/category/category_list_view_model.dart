@@ -2,6 +2,7 @@ import 'dart:async';
 
 import 'package:flutter/foundation.dart';
 
+import '../../data/models/event_status.dart';
 import '../../data/models/item.dart';
 import '../../data/repositories/item_repository.dart';
 import '../core/load_status.dart';
@@ -24,7 +25,7 @@ class CategoryListViewModel extends ChangeNotifier {
     notifyListeners();
     _sub = _repo.watchByKategori(kategori).listen(
       (list) {
-        items = list;
+        items = kategori == Kategori.event ? sortEvents(list) : list;
         status = list.isEmpty ? LoadStatus.empty : LoadStatus.ready;
         notifyListeners();
       },

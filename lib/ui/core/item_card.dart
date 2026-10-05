@@ -1,8 +1,15 @@
 import 'package:flutter/material.dart';
 
+import '../../data/models/event_status.dart';
 import '../../data/models/item.dart';
 import '../../data/models/open_hours.dart';
 import 'formatters.dart';
+import 'item_labels.dart';
+
+Color okColor(BuildContext context) =>
+    Theme.of(context).brightness == Brightness.dark
+        ? const Color(0xFF4ADE80)
+        : const Color(0xFF15803D);
 
 class ItemPhoto extends StatelessWidget {
   const ItemPhoto({
@@ -56,14 +63,38 @@ class OpenBadge extends StatelessWidget {
     final open = isOpenNow(jamBuka, jamTutup);
     if (open == null) return const SizedBox.shrink();
     final cs = Theme.of(context).colorScheme;
-    final dark = Theme.of(context).brightness == Brightness.dark;
-    final okColor = dark ? const Color(0xFF4ADE80) : const Color(0xFF15803D);
     return Text(
       open ? 'Buka' : 'Tutup',
       style: TextStyle(
         fontSize: 12,
         fontWeight: FontWeight.w700,
-        color: open ? okColor : cs.error,
+        color: open ? okColor(context) : cs.error,
+      ),
+    );
+  }
+}
+
+class EventBadge extends StatelessWidget {
+  const EventBadge({super.key, required this.item});
+
+  final Item item;
+
+  @override
+  Widget build(BuildContext context) {
+    final s = eventStatus(item.tanggalMulai, item.tanggalSelesai);
+    if (s == null) return const SizedBox.shrink();
+    final cs = Theme.of(context).colorScheme;
+    final color = switch (s) {
+      EventStatus.berlangsung => okColor(context),
+      EventStatus.akanDatang => cs.primary,
+      EventStatus.selesai => cs.onSurfaceVariant,
+    };
+    return Text(
+      eventStatusLabel(s),
+      style: TextStyle(
+        fontSize: 12,
+        fontWeight: FontWeight.w700,
+        color: color,
       ),
     );
   }
@@ -79,6 +110,9 @@ class ItemCard extends StatelessWidget {
   Widget build(BuildContext context) {
     final cs = Theme.of(context).colorScheme;
     final text = Theme.of(context).textTheme;
+    final info = item.kategori == Kategori.event
+        ? tanggalLabel(item)
+        : hargaLabel(item);
     return Card(
       margin: const EdgeInsets.symmetric(horizontal: 16, vertical: 6),
       clipBehavior: Clip.antiAlias,
@@ -101,12 +135,14 @@ class ItemCard extends StatelessWidget {
                       style: text.titleSmall
                           ?.copyWith(fontWeight: FontWeight.w700),
                     ),
-                    const SizedBox(height: 2),
-                    Text(
-                      formatRupiah(item.harga),
-                      style: text.bodySmall
-                          ?.copyWith(color: cs.onSurfaceVariant),
-                    ),
+                    if (info != null) ...[
+                      const SizedBox(height: 2),
+                      Text(
+                        info,
+                        style: text.bodySmall
+                            ?.copyWith(color: cs.onSurfaceVariant),
+                      ),
+                    ],
                     const SizedBox(height: 6),
                     Row(
                       children: [
@@ -119,10 +155,13 @@ class ItemCard extends StatelessWidget {
                           style: text.bodySmall,
                         ),
                         const SizedBox(width: 8),
-                        OpenBadge(
-                          jamBuka: item.jamBuka,
-                          jamTutup: item.jamTutup,
-                        ),
+                        if (item.kategori == Kategori.event)
+                          EventBadge(item: item)
+                        else
+                          OpenBadge(
+                            jamBuka: item.jamBuka,
+                            jamTutup: item.jamTutup,
+                          ),
                       ],
                     ),
                   ],
