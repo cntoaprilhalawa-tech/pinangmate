@@ -6,8 +6,10 @@ import '../../data/repositories/item_repository.dart';
 import '../core/formatters.dart';
 import '../core/item_card.dart';
 import '../core/item_labels.dart';
+import '../core/launchers.dart';
 import '../core/load_status.dart';
 import '../core/state_views.dart';
+import 'contact_bar.dart';
 import 'item_detail_view_model.dart';
 
 class ItemDetailPage extends StatelessWidget {
@@ -73,6 +75,7 @@ class _DetailContent extends StatelessWidget {
     ].join(' · ');
 
     return Scaffold(
+      bottomNavigationBar: ContactBar(item: item),
       body: CustomScrollView(
         slivers: [
           SliverAppBar(
@@ -148,6 +151,15 @@ class _DetailContent extends StatelessWidget {
                     const SizedBox(height: 8),
                     _InfoRow(icon: Icons.call_outlined, text: item.kontak!),
                   ],
+                  const SizedBox(height: 16),
+                  SizedBox(
+                    width: double.infinity,
+                    child: OutlinedButton.icon(
+                      onPressed: () => bukaGoogleMaps(context, item),
+                      icon: const Icon(Icons.map_outlined),
+                      label: const Text('Google Maps'),
+                    ),
+                  ),
                   if (footer.isNotEmpty) ...[
                     const SizedBox(height: 16),
                     Text(
