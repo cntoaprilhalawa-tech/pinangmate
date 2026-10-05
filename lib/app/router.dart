@@ -1,8 +1,10 @@
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
+import 'package:latlong2/latlong.dart';
 
 import '../ui/admin/admin_form_page.dart';
 import '../ui/admin/admin_page.dart';
+import '../ui/admin/location_picker_page.dart';
 import '../ui/auth/akun_page.dart';
 import '../ui/auth/auth_gate.dart';
 import '../ui/auth/auth_view_model.dart';
@@ -101,6 +103,10 @@ GoRouter createRouter(AuthViewModel auth) {
           id: s.uri.queryParameters['id'],
           kategori: kategoriFromRoute(s.uri.queryParameters['kategori']),
         ),
+      ),
+      GoRoute(
+        path: '/admin/lokasi',
+        builder: (c, s) => LocationPickerPage(initial: s.extra as LatLng?),
       ),
     ],
   );

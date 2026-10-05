@@ -6,6 +6,7 @@ import 'package:provider/provider.dart';
 import 'app/router.dart';
 import 'data/repositories/auth_repository.dart';
 import 'data/repositories/item_repository.dart';
+import 'data/services/nominatim_service.dart';
 import 'firebase_options.dart';
 import 'ui/auth/auth_view_model.dart';
 import 'ui/core/app_theme.dart';
@@ -24,6 +25,7 @@ Future<void> main() async {
       providers: [
         Provider<AuthRepository>.value(value: authRepo),
         Provider<ItemRepository>(create: (_) => ItemRepository()),
+        Provider<NominatimService>(create: (_) => NominatimService()),
         ChangeNotifierProvider<AuthViewModel>.value(value: authVm),
       ],
       child: PinangMateApp(router: createRouter(authVm)),

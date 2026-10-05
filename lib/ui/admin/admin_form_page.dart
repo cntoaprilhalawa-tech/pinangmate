@@ -2,6 +2,8 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:go_router/go_router.dart';
 import 'package:provider/provider.dart';
+import 'package:latlong2/latlong.dart';
+import 'location_picker_view_model.dart' show PickedLocation;
 
 import '../../data/models/form_parsers.dart';
 import '../../data/models/item.dart';
@@ -216,6 +218,20 @@ class _ItemFormState extends State<_ItemForm> {
     if (text == null || text.isEmpty || !mounted) return;
     setState(() => _koordinat.text = text);
   }
+    Future<void> _pilihDiPeta() async {
+    final k = parseKoordinat(_koordinat.text);
+    final hasil = await context.push<PickedLocation>(
+      '/admin/lokasi',
+      extra: k == null ? null : LatLng(k.lat, k.lng),
+    );
+    if (hasil == null || !mounted) return;
+    setState(() {
+      _koordinat.text = formatKoordinat(hasil.lat, hasil.lng);
+      if (_alamat.text.trim().isEmpty && hasil.alamat != null) {
+        _alamat.text = hasil.alamat!;
+      }
+    });
+  }
 
   Future<void> _simpan() async {
     if (!_key.currentState!.validate()) return;
@@ -278,6 +294,14 @@ class _ItemFormState extends State<_ItemForm> {
                   validator: (v) => (v == null || v.trim().length < 3)
                       ? 'Nama minimal 3 huruf'
                       : null,
+                ),
+                                Align(
+                  alignment: Alignment.centerLeft,
+                  child: TextButton.icon(
+                    onPressed: _pilihDiPeta,
+                    icon: const Icon(Icons.map_outlined),
+                    label: const Text('Pilih di peta / cari lokasi'),
+                  ),
                 ),
                 gap,
                 TextFormField(
