@@ -22,6 +22,14 @@ class AkunPage extends StatelessWidget {
                   Text(vm.user?.email ?? '-'),
                   Text(vm.isAdmin ? 'Peran: admin' : 'Peran: pengguna'),
                   const SizedBox(height: 16),
+                  if (vm.isAdmin) ...[
+                    FilledButton.tonalIcon(
+                      onPressed: () => context.push('/admin'),
+                      icon: const Icon(Icons.admin_panel_settings_outlined),
+                      label: const Text('Panel Admin'),
+                    ),
+                    const SizedBox(height: 8),
+                  ],
                   FilledButton(
                     onPressed: vm.logout,
                     child: const Text('Keluar'),

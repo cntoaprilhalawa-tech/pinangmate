@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 
+import '../ui/admin/admin_page.dart';
 import '../ui/auth/akun_page.dart';
 import '../ui/auth/auth_gate.dart';
 import '../ui/auth/auth_view_model.dart';
@@ -30,6 +31,7 @@ GoRouter createRouter(AuthViewModel auth) {
       if (!auth.ready) return loc == '/splash' ? null : '/splash';
       if (loc == '/splash') return '/';
       if (auth.loggedIn && loc == '/login') return '/';
+      if (loc.startsWith('/admin') && !auth.isAdmin) return '/';
       return null;
     },
     routes: [
@@ -91,7 +93,7 @@ GoRouter createRouter(AuthViewModel auth) {
         path: '/beri-nilai/:id',
         builder: (c, s) => const PlaceholderPage('Beri Nilai'),
       ),
-      GoRoute(path: '/admin', builder: (c, s) => const PlaceholderPage('Admin')),
+      GoRoute(path: '/admin', builder: (c, s) => const AdminPage()),
       GoRoute(
         path: '/admin/form',
         builder: (c, s) => const PlaceholderPage('Form Admin'),

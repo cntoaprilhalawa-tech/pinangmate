@@ -8,19 +8,29 @@ class ItemRepository {
 
   final FirebaseFirestore _db;
 
-  /// Data aktif satu kategori, urut nama.
+  /// Data aktif satu kategori, urut nama (untuk pengunjung).
   Stream<List<Item>> watchByKategori(Kategori k) {
     return _db
         .collection('items')
         .where('kategori', isEqualTo: k.name)
         .where('aktif', isEqualTo: true)
         .snapshots()
-        .map((snap) {
-      final list =
-          snap.docs.map((d) => Item.fromMap(d.id, d.data())).toList();
-      list.sort((a, b) => a.nama.compareTo(b.nama));
-      return list;
-    });
+        .map(_toSortedList);
+  }
+
+  /// Semua data satu kategori, termasuk yang nonaktif (untuk admin).
+  Stream<List<Item>> watchAllByKategori(Kategori k) {
+    return _db
+        .collection('items')
+        .where('kategori', isEqualTo: k.name)
+        .snapshots()
+        .map(_toSortedList);
+  }
+
+  List<Item> _toSortedList(QuerySnapshot<Map<String, dynamic>> snap) {
+    final list = snap.docs.map((d) => Item.fromMap(d.id, d.data())).toList();
+    list.sort((a, b) => a.nama.compareTo(b.nama));
+    return list;
   }
 
   Future<Item?> getById(String id) async {
@@ -29,4 +39,6 @@ class ItemRepository {
     if (data == null) return null;
     return Item.fromMap(doc.id, data);
   }
+
+  Future<void> delete(String id) => _db.collection('items').doc(id).delete();
 }
