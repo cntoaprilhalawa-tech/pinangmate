@@ -5,7 +5,9 @@ import '../ui/auth/akun_page.dart';
 import '../ui/auth/auth_gate.dart';
 import '../ui/auth/auth_view_model.dart';
 import '../ui/auth/login_page.dart';
+import '../ui/category/category_list_page.dart';
 import '../ui/core/app_shell.dart';
+import '../ui/detail/item_detail_page.dart';
 import '../ui/home/beranda_page.dart';
 
 class PlaceholderPage extends StatelessWidget {
@@ -22,7 +24,7 @@ class PlaceholderPage extends StatelessWidget {
 GoRouter createRouter(AuthViewModel auth) {
   return GoRouter(
     initialLocation: '/splash',
-       refreshListenable: auth.routerRefresh,
+    refreshListenable: auth.routerRefresh,
     redirect: (context, state) {
       final loc = state.matchedLocation;
       if (!auth.ready) return loc == '/splash' ? null : '/splash';
@@ -47,8 +49,9 @@ GoRouter createRouter(AuthViewModel auth) {
               routes: [
                 GoRoute(
                   path: 'kategori/:jenis',
-                  builder: (c, s) =>
-                      PlaceholderPage('Daftar ${s.pathParameters['jenis']}'),
+                  builder: (c, s) => CategoryListPage(
+                    kategori: kategoriFromRoute(s.pathParameters['jenis']),
+                  ),
                 ),
               ],
             ),
@@ -82,7 +85,7 @@ GoRouter createRouter(AuthViewModel auth) {
       ),
       GoRoute(
         path: '/item/:id',
-        builder: (c, s) => PlaceholderPage('Detail ${s.pathParameters['id']}'),
+        builder: (c, s) => ItemDetailPage(id: s.pathParameters['id']!),
       ),
       GoRoute(
         path: '/beri-nilai/:id',

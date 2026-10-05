@@ -1,0 +1,1 @@
+enum LoadStatus { loading, ready, empty, error }
