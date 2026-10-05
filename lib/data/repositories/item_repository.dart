@@ -40,5 +40,24 @@ class ItemRepository {
     return Item.fromMap(doc.id, data);
   }
 
+  /// Tambah data baru (ID otomatis), rating dimulai dari nol.
+  Future<void> create(Item item) async {
+    final data = item.toMap();
+    data['ratingSum'] = 0;
+    data['ratingCount'] = 0;
+    await _db.collection('items').doc().set(data);
+  }
+
+  /// Ubah data. Rating tidak disentuh.
+  Future<void> update(String id, Item item) {
+    final data = item.toMap()
+      ..remove('ratingSum')
+      ..remove('ratingCount');
+    return _db
+        .collection('items')
+        .doc(id)
+        .set(data, SetOptions(merge: true));
+  }
+
   Future<void> delete(String id) => _db.collection('items').doc(id).delete();
 }

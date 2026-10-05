@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 
+import '../ui/admin/admin_form_page.dart';
 import '../ui/admin/admin_page.dart';
 import '../ui/auth/akun_page.dart';
 import '../ui/auth/auth_gate.dart';
@@ -96,7 +97,10 @@ GoRouter createRouter(AuthViewModel auth) {
       GoRoute(path: '/admin', builder: (c, s) => const AdminPage()),
       GoRoute(
         path: '/admin/form',
-        builder: (c, s) => const PlaceholderPage('Form Admin'),
+        builder: (c, s) => AdminFormPage(
+          id: s.uri.queryParameters['id'],
+          kategori: kategoriFromRoute(s.uri.queryParameters['kategori']),
+        ),
       ),
     ],
   );
