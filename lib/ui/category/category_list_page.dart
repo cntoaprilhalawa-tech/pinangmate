@@ -27,21 +27,38 @@ String judulKategori(Kategori k) {
   }
 }
 
-class CategoryListPage extends StatelessWidget {
+String _cap(String s) =>
+    s.isEmpty ? s : '${s[0].toUpperCase()}${s.substring(1)}';
+
+class CategoryListPage extends StatefulWidget {
   const CategoryListPage({super.key, required this.kategori});
 
   final Kategori kategori;
 
   @override
+  State<CategoryListPage> createState() => _CategoryListPageState();
+}
+
+class _CategoryListPageState extends State<CategoryListPage> {
+  final _search = TextEditingController();
+
+  @override
+  void dispose() {
+    _search.dispose();
+    super.dispose();
+  }
+
+  @override
   Widget build(BuildContext context) {
+    final kategori = widget.kategori;
     return ChangeNotifierProvider(
       create: (c) => CategoryListViewModel(c.read<ItemRepository>(), kategori),
       child: Scaffold(
         appBar: AppBar(title: Text(judulKategori(kategori))),
         body: Column(
           children: [
-            _StickyFilter(kategori: kategori),
-            Expanded(child: _Body(kategori: kategori)),
+            _StickyFilter(kategori: kategori, search: _search),
+            Expanded(child: _Body(kategori: kategori, search: _search)),
           ],
         ),
       ),
@@ -50,15 +67,17 @@ class CategoryListPage extends StatelessWidget {
 }
 
 /// Di luar daftar, jadi tetap terlihat saat daftar digeser.
-/// Kolom cari dan chip diaktifkan di state 7.
 class _StickyFilter extends StatelessWidget {
-  const _StickyFilter({required this.kategori});
+  const _StickyFilter({required this.kategori, required this.search});
 
   final Kategori kategori;
+  final TextEditingController search;
 
   @override
   Widget build(BuildContext context) {
+    final vm = context.watch<CategoryListViewModel>();
     final cs = Theme.of(context).colorScheme;
+    final tags = vm.tags;
     return Material(
       color: Theme.of(context).scaffoldBackgroundColor,
       child: Column(
@@ -68,11 +87,23 @@ class _StickyFilter extends StatelessWidget {
             child: Column(
               children: [
                 TextField(
-                  readOnly: true,
+                  controller: search,
+                  onChanged: vm.setQuery,
+                  textInputAction: TextInputAction.search,
                   decoration: InputDecoration(
                     hintText:
                         'Temukan ${judulKategori(kategori).toLowerCase()}…',
                     prefixIcon: const Icon(Icons.search),
+                    suffixIcon: vm.query.isEmpty
+                        ? null
+                        : IconButton(
+                            tooltip: 'Hapus pencarian',
+                            icon: const Icon(Icons.close),
+                            onPressed: () {
+                              search.clear();
+                              vm.setQuery('');
+                            },
+                          ),
                     filled: true,
                     fillColor: cs.surfaceContainerHighest,
                     contentPadding: EdgeInsets.zero,
@@ -82,27 +113,39 @@ class _StickyFilter extends StatelessWidget {
                     ),
                   ),
                 ),
-                if (kategori == Kategori.wisata)
-                  Padding(
-                    padding: const EdgeInsets.only(top: 8),
-                    child: SingleChildScrollView(
-                      scrollDirection: Axis.horizontal,
-                      child: Row(
-                        children: [
-                          Chip(
-                            label: const Text('Semua'),
-                            backgroundColor: cs.primaryContainer,
+                Padding(
+                  padding: const EdgeInsets.only(top: 8),
+                  child: SingleChildScrollView(
+                    scrollDirection: Axis.horizontal,
+                    child: Row(
+                      children: [
+                        ChoiceChip(
+                          label: const Text('Semua'),
+                          selected: vm.tag == null,
+                          onSelected: (_) => vm.setTag(null),
+                        ),
+                        for (final t in tags) ...[
+                          const SizedBox(width: 8),
+                          ChoiceChip(
+                            label: Text(_cap(t)),
+                            selected: vm.tag == t,
+                            onSelected: (_) => vm.setTag(t),
                           ),
-                          const SizedBox(width: 8),
-                          const Chip(label: Text('Sejarah')),
-                          const SizedBox(width: 8),
-                          const Chip(label: Text('Alam')),
-                          const SizedBox(width: 8),
-                          const Chip(label: Text('Harga ▾')),
                         ],
-                      ),
+                        const SizedBox(width: 8),
+                        ChoiceChip(
+                          label: Text(
+                            vm.harga == HargaFilter.semua
+                                ? 'Harga ▾'
+                                : '${vm.harga.label} ▾',
+                          ),
+                          selected: vm.harga != HargaFilter.semua,
+                          onSelected: (_) => _pilihHarga(context, vm),
+                        ),
+                      ],
                     ),
                   ),
+                ),
               ],
             ),
           ),
@@ -111,12 +154,36 @@ class _StickyFilter extends StatelessWidget {
       ),
     );
   }
+
+  void _pilihHarga(BuildContext context, CategoryListViewModel vm) {
+    showModalBottomSheet<void>(
+      context: context,
+      showDragHandle: true,
+      builder: (ctx) => SafeArea(
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            for (final h in HargaFilter.values)
+              ListTile(
+                title: Text(h.label),
+                trailing: vm.harga == h ? const Icon(Icons.check) : null,
+                onTap: () {
+                  vm.setHarga(h);
+                  Navigator.pop(ctx);
+                },
+              ),
+          ],
+        ),
+      ),
+    );
+  }
 }
 
 class _Body extends StatelessWidget {
-  const _Body({required this.kategori});
+  const _Body({required this.kategori, required this.search});
 
   final Kategori kategori;
+  final TextEditingController search;
 
   @override
   Widget build(BuildContext context) {
@@ -128,20 +195,45 @@ class _Body extends StatelessWidget {
           onRetry: vm.retry,
         ),
       LoadStatus.empty => EmptyView(
-          message:
-              'Belum ada data ${judulKategori(kategori).toLowerCase()}.',
+          message: 'Belum ada data ${judulKategori(kategori).toLowerCase()}.',
         ),
-      LoadStatus.ready => ListView.builder(
-          padding: const EdgeInsets.only(top: 8, bottom: 80),
-          itemCount: vm.items.length,
-          itemBuilder: (context, i) {
-            final item = vm.items[i];
-            return ItemCard(
-              item: item,
-              onTap: () => context.push('/item/${item.id}'),
-            );
-          },
-        ),
+      LoadStatus.ready => _Hasil(vm: vm, search: search),
     };
+  }
+}
+
+class _Hasil extends StatelessWidget {
+  const _Hasil({required this.vm, required this.search});
+
+  final CategoryListViewModel vm;
+  final TextEditingController search;
+
+  @override
+  Widget build(BuildContext context) {
+    final list = vm.filtered;
+    if (list.isEmpty) {
+      return EmptyView(
+        icon: Icons.search_off,
+        message: 'Tidak ada hasil yang cocok.',
+        actionLabel: vm.filterAktif ? 'Reset filter' : null,
+        onAction: vm.filterAktif
+            ? () {
+                search.clear();
+                vm.reset();
+              }
+            : null,
+      );
+    }
+    return ListView.builder(
+      padding: const EdgeInsets.only(top: 8, bottom: 80),
+      itemCount: list.length,
+      itemBuilder: (context, i) {
+        final item = list[i];
+        return ItemCard(
+          item: item,
+          onTap: () => context.push('/item/${item.id}'),
+        );
+      },
+    );
   }
 }

@@ -178,7 +178,7 @@ class _PopularSection extends StatelessWidget {
           child: EmptyView(message: 'Belum ada destinasi populer.'),
         );
       case LoadStatus.ready:
-        final list = popularItems(vm.items);
+        final list = popularItems(vm.all);
         return SizedBox(
           height: _listHeight,
           child: ListView.separated(
