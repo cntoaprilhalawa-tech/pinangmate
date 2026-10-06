@@ -26,6 +26,15 @@ class ItemRepository {
         .snapshots()
         .map(_toSortedList);
   }
+    /// Sama seperti watchByKategori, plus penanda data berasal dari cache.
+  Stream<(List<Item>, bool)> watchByKategoriMeta(Kategori k) {
+    return _db
+        .collection('items')
+        .where('kategori', isEqualTo: k.name)
+        .where('aktif', isEqualTo: true)
+        .snapshots(includeMetadataChanges: true)
+        .map((snap) => (_toSortedList(snap), snap.metadata.isFromCache));
+  }
 
   List<Item> _toSortedList(QuerySnapshot<Map<String, dynamic>> snap) {
     final list = snap.docs.map((d) => Item.fromMap(d.id, d.data())).toList();

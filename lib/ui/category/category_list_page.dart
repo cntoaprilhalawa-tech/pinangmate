@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 import 'package:provider/provider.dart';
-
+import '../../data/services/location_service.dart';
 import '../../data/models/item.dart';
 import '../../data/repositories/item_repository.dart';
 import '../core/item_card.dart';
@@ -52,12 +52,17 @@ class _CategoryListPageState extends State<CategoryListPage> {
   Widget build(BuildContext context) {
     final kategori = widget.kategori;
     return ChangeNotifierProvider(
-      create: (c) => CategoryListViewModel(c.read<ItemRepository>(), kategori),
+            create: (c) => CategoryListViewModel(
+        c.read<ItemRepository>(),
+        kategori,
+        c.read<LocationService>(),
+      ),
       child: Scaffold(
         appBar: AppBar(title: Text(judulKategori(kategori))),
         body: Column(
           children: [
             _StickyFilter(kategori: kategori, search: _search),
+            const _OfflineBanner(),
             Expanded(child: _Body(kategori: kategori, search: _search)),
           ],
         ),
@@ -142,6 +147,23 @@ class _StickyFilter extends StatelessWidget {
                           selected: vm.harga != HargaFilter.semua,
                           onSelected: (_) => _pilihHarga(context, vm),
                         ),
+                                                const SizedBox(width: 8),
+                        ChoiceChip(
+                          avatar: vm.lokasiLoading
+                              ? const SizedBox(
+                                  width: 16,
+                                  height: 16,
+                                  child: CircularProgressIndicator(
+                                    strokeWidth: 2,
+                                  ),
+                                )
+                              : const Icon(Icons.near_me_outlined, size: 18),
+                          label: const Text('Terdekat'),
+                          selected: vm.terdekat,
+                          onSelected: vm.lokasiLoading
+                              ? null
+                              : (_) => _terdekat(context, vm),
+                        ),
                       ],
                     ),
                   ),
@@ -174,6 +196,21 @@ class _StickyFilter extends StatelessWidget {
               ),
           ],
         ),
+      ),
+    );
+  }  Future<void> _terdekat(
+    BuildContext context,
+    CategoryListViewModel vm,
+  ) async {
+    final messenger = ScaffoldMessenger.of(context);
+    final pesan = await vm.toggleTerdekat();
+    if (pesan == null) return;
+    messenger.showSnackBar(
+      SnackBar(
+        content: Text(pesan),
+        action: vm.lokasiDitolakPermanen
+            ? SnackBarAction(label: 'Pengaturan', onPressed: vm.bukaPengaturan)
+            : null,
       ),
     );
   }
@@ -232,8 +269,36 @@ class _Hasil extends StatelessWidget {
         return ItemCard(
           item: item,
           onTap: () => context.push('/item/${item.id}'),
+          jarak: vm.jarakLabel(item), 
         );
       },
+    );
+  }
+}
+class _OfflineBanner extends StatelessWidget {
+  const _OfflineBanner();
+
+  @override
+  Widget build(BuildContext context) {
+    final vm = context.watch<CategoryListViewModel>();
+    if (!vm.offline) return const SizedBox.shrink();
+    final cs = Theme.of(context).colorScheme;
+    return Container(
+      width: double.infinity,
+      color: cs.secondaryContainer,
+      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 6),
+      child: Row(
+        children: [
+          Icon(Icons.cloud_off, size: 16, color: cs.onSecondaryContainer),
+          const SizedBox(width: 8),
+          Expanded(
+            child: Text(
+              'Mode offline: menampilkan data tersimpan.',
+              style: TextStyle(fontSize: 12, color: cs.onSecondaryContainer),
+            ),
+          ),
+        ],
+      ),
     );
   }
 }

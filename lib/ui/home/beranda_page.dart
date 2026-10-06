@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 import 'package:provider/provider.dart';
-
+import '../../data/services/location_service.dart';
 import '../../data/models/item.dart';
 import '../../data/models/popular.dart';
 import '../../data/repositories/item_repository.dart';
@@ -17,8 +17,11 @@ class BerandaPage extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return ChangeNotifierProvider(
-      create: (c) =>
-          CategoryListViewModel(c.read<ItemRepository>(), Kategori.wisata),
+      create: (c) => CategoryListViewModel(       // ← baris 21
+        c.read<ItemRepository>(),
+        Kategori.wisata,
+        c.read<LocationService>(),                // ← TAMBAH
+      ),
       child: const _BerandaView(),
     );
   }

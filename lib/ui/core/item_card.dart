@@ -133,11 +133,16 @@ class EventBadge extends StatelessWidget {
 }
 
 class ItemCard extends StatelessWidget {
-  const ItemCard({super.key, required this.item, required this.onTap});
+    const ItemCard({
+    super.key,
+    required this.item,
+    required this.onTap,
+    this.jarak,
+  });
 
   final Item item;
   final VoidCallback onTap;
-
+  final String? jarak;
   @override
   Widget build(BuildContext context) {
     final cs = Theme.of(context).colorScheme;
@@ -194,6 +199,10 @@ class ItemCard extends StatelessWidget {
                             jamBuka: item.jamBuka,
                             jamTutup: item.jamTutup,
                           ),
+                          if (jarak != null) ...[
+                          const SizedBox(width: 8),
+                          Text(jarak!, style: text.bodySmall),
+                        ],
                       ],
                     ),
                   ],

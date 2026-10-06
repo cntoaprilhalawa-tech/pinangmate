@@ -12,11 +12,17 @@ import 'data/services/nominatim_service.dart';
 import 'firebase_options.dart';
 import 'ui/auth/auth_view_model.dart';
 import 'ui/core/app_theme.dart';
+import 'package:cloud_firestore/cloud_firestore.dart';
+import 'data/services/location_service.dart';
 
 Future<void> main() async {
   WidgetsFlutterBinding.ensureInitialized();
   await Firebase.initializeApp(
     options: DefaultFirebaseOptions.currentPlatform,
+  );
+    FirebaseFirestore.instance.settings = const Settings(
+    persistenceEnabled: true,
+    cacheSizeBytes: Settings.CACHE_SIZE_UNLIMITED,
   );
 
   final authRepo = AuthRepository();
@@ -27,7 +33,8 @@ Future<void> main() async {
       providers: [
         Provider<AuthRepository>.value(value: authRepo),
         Provider<ItemRepository>(create: (_) => ItemRepository()),
-                Provider<WishlistRepository>(create: (_) => WishlistRepository()),
+        Provider<WishlistRepository>(create: (_) => WishlistRepository()),
+        Provider<LocationService>(create: (_) => LocationService()),
         ChangeNotifierProvider<WishlistViewModel>(
           create: (c) => WishlistViewModel(
             c.read<WishlistRepository>(),

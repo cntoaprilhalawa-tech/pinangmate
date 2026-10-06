@@ -4,6 +4,7 @@ import 'package:flutter/foundation.dart';
 
 import '../../data/models/item.dart';
 import '../../data/repositories/item_repository.dart';
+import '../../data/services/location_service.dart';
 import '../core/load_status.dart';
 
 enum HargaFilter { semua, gratis, hemat, sedang, mahal }
@@ -41,14 +42,24 @@ extension HargaFilterLabel on HargaFilter {
 }
 
 class CategoryListViewModel extends ChangeNotifier {
-  CategoryListViewModel(this._repo, this.kategori) {
+  CategoryListViewModel(this._repo, this.kategori, this._loc) {
     _listen();
   }
 
   final ItemRepository _repo;
+  final LocationService _loc;
+  Timer? _offlineTimer;
+  bool _disposed = false;
+
+  bool offline = false;
+  bool terdekat = false;
+  bool lokasiLoading = false;
+  bool lokasiDitolakPermanen = false;
+  ({double lat, double lng})? posisi;
+
   final Kategori kategori;
 
-  StreamSubscription<List<Item>>? _sub;
+  StreamSubscription<dynamic>? _sub;
 
   LoadStatus status = LoadStatus.loading;
   List<Item> all = const [];
@@ -71,7 +82,7 @@ class CategoryListViewModel extends ChangeNotifier {
 
   List<Item> get filtered {
     final q = query.trim().toLowerCase();
-    return all.where((i) {
+    final hasil = all.where((i) {
       if (tag != null && !i.tag.contains(tag)) return false;
       if (!harga.cocok(i.harga)) return false;
       if (q.isEmpty) return true;
@@ -79,6 +90,12 @@ class CategoryListViewModel extends ChangeNotifier {
           i.deskripsi.toLowerCase().contains(q) ||
           (i.alamat ?? '').toLowerCase().contains(q);
     }).toList();
+    final p = posisi;
+    if (terdekat && p != null) {
+      hasil.sort((a, b) => LocationService.jarakMeter(p.lat, p.lng, a.lat, a.lng)
+          .compareTo(LocationService.jarakMeter(p.lat, p.lng, b.lat, b.lng)));
+    }
+    return hasil;
   }
 
   void setQuery(String v) {
@@ -107,10 +124,11 @@ class CategoryListViewModel extends ChangeNotifier {
     _sub?.cancel();
     status = LoadStatus.loading;
     notifyListeners();
-    _sub = _repo.watchByKategori(kategori).listen(
-      (list) {
-        all = list;
-        status = list.isEmpty ? LoadStatus.empty : LoadStatus.ready;
+    _sub = _repo.watchByKategoriMeta(kategori).listen(
+      (r) {
+        all = r.$1;
+        status = all.isEmpty ? LoadStatus.empty : LoadStatus.ready;
+        _setOffline(r.$2);
         notifyListeners();
       },
       onError: (Object e) {
@@ -120,10 +138,66 @@ class CategoryListViewModel extends ChangeNotifier {
     );
   }
 
+  /// Banner baru muncul kalau data dari cache bertahan 2 detik,
+  /// supaya tidak berkedip saat pemuatan awal.
+  void _setOffline(bool fromCache) {
+    _offlineTimer?.cancel();
+    if (!fromCache) {
+      offline = false;
+      return;
+    }
+    _offlineTimer = Timer(const Duration(seconds: 2), () {
+      offline = true;
+      if (!_disposed) notifyListeners();
+    });
+  }
+
+  /// Mengembalikan pesan untuk snackbar, atau null kalau berhasil.
+  Future<String?> toggleTerdekat() async {
+    if (terdekat) {
+      terdekat = false;
+      notifyListeners();
+      return null;
+    }
+    lokasiLoading = true;
+    notifyListeners();
+    final r = await _loc.ambil();
+    if (_disposed) return null;
+    lokasiLoading = false;
+    lokasiDitolakPermanen = r.status == LokasiStatus.ditolakPermanen;
+    if (r.status == LokasiStatus.ok) {
+      posisi = (lat: r.lat!, lng: r.lng!);
+      terdekat = true;
+      notifyListeners();
+      return null;
+    }
+    notifyListeners();
+    return switch (r.status) {
+      LokasiStatus.layananMati => 'Nyalakan GPS di pengaturan HP dulu.',
+      LokasiStatus.ditolak =>
+        'Izin lokasi ditolak, jadi urutan terdekat tidak bisa dipakai.',
+      LokasiStatus.ditolakPermanen =>
+        'Izin lokasi ditolak permanen. Aktifkan lewat pengaturan aplikasi.',
+      _ => 'Gagal mendapatkan lokasi. Coba lagi di tempat terbuka.',
+    };
+  }
+
+  Future<void> bukaPengaturan() => _loc.bukaPengaturan();
+
+  String? jarakLabel(Item i) {
+    final p = posisi;
+    if (!terdekat || p == null) return null;
+    final m = LocationService.jarakMeter(p.lat, p.lng, i.lat, i.lng);
+    if (m < 1000) return '${m.round()} m';
+    return '${(m / 1000).toStringAsFixed(1).replaceAll('.', ',')} km';
+  }
+
   void retry() => _listen();
 
   @override
   void dispose() {
+    _disposed = true;
+    _offlineTimer?.cancel();
     _sub?.cancel();
     super.dispose();
   }
