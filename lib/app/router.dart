@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 import 'package:latlong2/latlong.dart';
-
+import '../ui/wishlist/wishlist_page.dart';
 import '../ui/admin/admin_form_page.dart';
 import '../ui/admin/admin_page.dart';
 import '../ui/admin/location_picker_page.dart';
@@ -80,7 +80,7 @@ GoRouter createRouter(AuthViewModel auth) {
             GoRoute(
               path: '/wishlist',
               builder: (c, s) =>
-                  const AuthGate(child: PlaceholderPage('Wishlist')),
+                 const AuthGate(child: WishlistPage())
             ),
           ]),
           StatefulShellBranch(routes: [

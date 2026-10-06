@@ -6,6 +6,7 @@ import '../../data/models/item.dart';
 import '../../data/models/open_hours.dart';
 import 'formatters.dart';
 import 'item_labels.dart';
+import '../wishlist/favorite_button.dart';
 
 Color okColor(BuildContext context) =>
     Theme.of(context).brightness == Brightness.dark
@@ -198,6 +199,7 @@ class ItemCard extends StatelessWidget {
                   ],
                 ),
               ),
+                            FavoriteButton(itemId: item.id),
             ],
           ),
         ),

@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
-
+import '../wishlist/favorite_button.dart';
 import '../../data/models/item.dart';
 import '../../data/repositories/item_repository.dart';
 import '../core/formatters.dart';
@@ -80,6 +80,7 @@ class _DetailContent extends StatelessWidget {
         slivers: [
           SliverAppBar(
             pinned: true,
+            actions: [FavoriteButton(itemId: item.id)],
             expandedHeight: 220,
             flexibleSpace: FlexibleSpaceBar(
               background: ItemPhoto(
