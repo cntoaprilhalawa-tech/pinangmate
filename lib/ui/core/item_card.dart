@@ -1,5 +1,6 @@
+import 'dart:typed_data';
 import 'package:flutter/material.dart';
-
+import '../../data/models/foto_codec.dart';
 import '../../data/models/event_status.dart';
 import '../../data/models/item.dart';
 import '../../data/models/open_hours.dart';
@@ -11,7 +12,7 @@ Color okColor(BuildContext context) =>
         ? const Color(0xFF4ADE80)
         : const Color(0xFF15803D);
 
-class ItemPhoto extends StatelessWidget {
+class ItemPhoto extends StatefulWidget {
   const ItemPhoto({
     super.key,
     required this.foto,
@@ -26,32 +27,62 @@ class ItemPhoto extends StatelessWidget {
   final double radius;
 
   @override
+  State<ItemPhoto> createState() => _ItemPhotoState();
+}
+
+class _ItemPhotoState extends State<ItemPhoto> {
+  Uint8List? _bytes;
+
+  @override
+  void initState() {
+    super.initState();
+    _bytes = decodeFoto(widget.foto);
+  }
+
+  @override
+  void didUpdateWidget(ItemPhoto oldWidget) {
+    super.didUpdateWidget(oldWidget);
+    if (oldWidget.foto != widget.foto) _bytes = decodeFoto(widget.foto);
+  }
+
+  @override
   Widget build(BuildContext context) {
     final cs = Theme.of(context).colorScheme;
     final placeholder = Container(
-      width: width,
-      height: height,
+      width: widget.width,
+      height: widget.height,
       color: cs.surfaceContainerHighest,
       alignment: Alignment.center,
       child: Icon(Icons.photo_outlined, color: cs.onSurfaceVariant),
     );
-    final url = foto;
-    final Widget content = (url != null && url.startsWith('http'))
-        ? Image.network(
-            url,
-            width: width,
-            height: height,
-            fit: BoxFit.cover,
-            errorBuilder: (context, error, stackTrace) => placeholder,
-          )
-        : placeholder;
+    final url = widget.foto;
+    final Widget content;
+    if (_bytes != null) {
+      content = Image.memory(
+        _bytes!,
+        width: widget.width,
+        height: widget.height,
+        fit: BoxFit.cover,
+        gaplessPlayback: true,
+        errorBuilder: (context, error, stackTrace) => placeholder,
+      );
+    } else if (url != null && url.startsWith('http')) {
+      content = Image.network(
+        url,
+        width: widget.width,
+        height: widget.height,
+        fit: BoxFit.cover,
+        errorBuilder: (context, error, stackTrace) => placeholder,
+      );
+    } else {
+      content = placeholder;
+    }
     return ClipRRect(
-      borderRadius: BorderRadius.circular(radius),
+      borderRadius: BorderRadius.circular(widget.radius),
       child: content,
     );
   }
 }
-
 class OpenBadge extends StatelessWidget {
   const OpenBadge({super.key, required this.jamBuka, required this.jamTutup});
 

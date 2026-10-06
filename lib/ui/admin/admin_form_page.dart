@@ -4,7 +4,9 @@ import 'package:go_router/go_router.dart';
 import 'package:provider/provider.dart';
 import 'package:latlong2/latlong.dart';
 import 'location_picker_view_model.dart' show PickedLocation;
-
+import 'package:image_picker/image_picker.dart';
+import '../../data/models/foto_codec.dart';
+import '../core/item_card.dart' show ItemPhoto;
 import '../../data/models/form_parsers.dart';
 import '../../data/models/item.dart';
 import '../../data/repositories/item_repository.dart';
@@ -133,6 +135,8 @@ class _ItemFormState extends State<_ItemForm> {
   late bool _aktif;
   DateTime? _mulaiDate;
   DateTime? _selesaiDate;
+    String? _foto;
+  bool _memproses = false;
 
   bool get _isEvent => widget.kategori == Kategori.event;
 
@@ -165,6 +169,7 @@ class _ItemFormState extends State<_ItemForm> {
     _sumber = TextEditingController(text: i?.sumber ?? '');
     _tag = TextEditingController(text: i?.tag.join(', ') ?? '');
     _aktif = i?.aktif ?? true;
+        _foto = i?.foto;
   }
 
   @override
@@ -232,6 +237,40 @@ class _ItemFormState extends State<_ItemForm> {
       }
     });
   }
+    Future<void> _pilihFoto() async {
+    final messenger = ScaffoldMessenger.of(context);
+    setState(() => _memproses = true);
+    try {
+      final x = await ImagePicker().pickImage(
+        source: ImageSource.gallery,
+        maxWidth: 720,
+        maxHeight: 720,
+        imageQuality: 60,
+      );
+      if (x == null) return;
+      final bytes = await x.readAsBytes();
+      if (bytes.length > 200 * 1024) {
+        messenger.showSnackBar(
+          const SnackBar(
+            content: Text(
+              'Foto masih terlalu besar setelah dikompres. Pilih foto lain (JPEG).',
+            ),
+          ),
+        );
+        return;
+      }
+      if (!mounted) return;
+      setState(() => _foto = encodeFoto(bytes));
+    } catch (_) {
+      messenger.showSnackBar(
+        const SnackBar(content: Text('Gagal memilih foto.')),
+      );
+    } finally {
+      if (mounted) setState(() => _memproses = false);
+    }
+  }
+
+  void _hapusFoto() => setState(() => _foto = null);
 
   Future<void> _simpan() async {
     if (!_key.currentState!.validate()) return;
@@ -257,7 +296,7 @@ class _ItemFormState extends State<_ItemForm> {
       alamat: opsional(_alamat.text),
       lat: k.lat,
       lng: k.lng,
-      foto: i?.foto, // foto diatur di langkah berikutnya, jangan dihapus
+      foto: _foto,
       sumber: opsional(_sumber.text),
       aktif: _aktif,
       tanggalMulai: _isEvent ? _wibStart(_mulaiDate!) : null,
@@ -287,6 +326,38 @@ class _ItemFormState extends State<_ItemForm> {
             child: ListView(
               padding: const EdgeInsets.all(16),
               children: [
+                                ItemPhoto(foto: _foto, width: double.infinity, height: 180),
+                const SizedBox(height: 8),
+                Row(
+                  children: [
+                    Expanded(
+                      child: OutlinedButton.icon(
+                        onPressed: _memproses ? null : _pilihFoto,
+                        icon: const Icon(Icons.photo_library_outlined),
+                        label: Text(_foto == null ? 'Pilih foto' : 'Ganti foto'),
+                      ),
+                    ),
+                    if (_foto != null) ...[
+                      const SizedBox(width: 8),
+                      OutlinedButton.icon(
+                        onPressed: _hapusFoto,
+                        icon: const Icon(Icons.delete_outline),
+                        label: const Text('Hapus'),
+                      ),
+                    ],
+                  ],
+                ),
+                Padding(
+                  padding: const EdgeInsets.only(top: 4, left: 4),
+                  child: Text(
+                    'Foto dikompres otomatis (maksimal sekitar 200 KB) dan disimpan di database.',
+                    style: Theme.of(context)
+                        .textTheme
+                        .bodySmall
+                        ?.copyWith(color: cs.onSurfaceVariant),
+                  ),
+                ),
+                gap,
                 TextFormField(
                   controller: _nama,
                   textCapitalization: TextCapitalization.words,
