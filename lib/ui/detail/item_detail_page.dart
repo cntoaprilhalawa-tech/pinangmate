@@ -1,3 +1,4 @@
+import '../rating/rating_section.dart';
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import '../wishlist/favorite_button.dart';
@@ -107,12 +108,7 @@ class _DetailContent extends StatelessWidget {
                     spacing: 8,
                     runSpacing: 8,
                     children: [
-                      Chip(
-                        avatar: const Icon(Icons.star_rounded, size: 18),
-                        label: Text(
-                          formatRating(item.ratingAvg, item.ratingCount),
-                        ),
-                      ),
+                      RatingChip(item: item),
                       if (tanggal != null)
                         Chip(
                           avatar: const Icon(Icons.event, size: 18),
@@ -161,6 +157,8 @@ class _DetailContent extends StatelessWidget {
                       label: const Text('Google Maps'),
                     ),
                   ),
+                                    const SizedBox(height: 16),
+                  RatingSection(item: item),
                   if (footer.isNotEmpty) ...[
                     const SizedBox(height: 16),
                     Text(

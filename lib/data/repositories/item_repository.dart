@@ -48,6 +48,13 @@ class ItemRepository {
     if (data == null) return null;
     return Item.fromMap(doc.id, data);
   }
+    /// Pantau satu dokumen, supaya rating di halaman detail ikut berubah langsung.
+  Stream<Item?> watchById(String id) {
+    return _db.collection('items').doc(id).snapshots().map((doc) {
+      final data = doc.data();
+      return data == null ? null : Item.fromMap(doc.id, data);
+    });
+  }
 
   /// Tambah data baru (ID otomatis), rating dimulai dari nol.
   Future<void> create(Item item) async {

@@ -4,7 +4,7 @@ import 'package:go_router/go_router.dart';
 import 'package:provider/provider.dart';
 import 'data/repositories/wishlist_repository.dart';
 import 'ui/wishlist/wishlist_view_model.dart';
-
+import 'data/repositories/rating_repository.dart';
 import 'app/router.dart';
 import 'data/repositories/auth_repository.dart';
 import 'data/repositories/item_repository.dart';
@@ -33,6 +33,7 @@ Future<void> main() async {
       providers: [
         Provider<AuthRepository>.value(value: authRepo),
         Provider<ItemRepository>(create: (_) => ItemRepository()),
+        Provider<RatingRepository>(create: (_) => RatingRepository()),
         Provider<WishlistRepository>(create: (_) => WishlistRepository()),
         Provider<LocationService>(create: (_) => LocationService()),
         ChangeNotifierProvider<WishlistViewModel>(
