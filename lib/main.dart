@@ -14,6 +14,8 @@ import 'ui/auth/auth_view_model.dart';
 import 'ui/core/app_theme.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'data/services/location_service.dart';
+import 'data/repositories/plan_repository.dart';
+import 'ui/plan/plan_view_model.dart';
 
 Future<void> main() async {
   WidgetsFlutterBinding.ensureInitialized();
@@ -34,6 +36,10 @@ Future<void> main() async {
         Provider<AuthRepository>.value(value: authRepo),
         Provider<ItemRepository>(create: (_) => ItemRepository()),
         Provider<RatingRepository>(create: (_) => RatingRepository()),
+        Provider<PlanRepository>(create: (_) => PlanRepository()),
+        ChangeNotifierProvider<PlanViewModel>(
+          create: (c) => PlanViewModel(c.read<PlanRepository>()),
+        ),
         Provider<WishlistRepository>(create: (_) => WishlistRepository()),
         Provider<LocationService>(create: (_) => LocationService()),
         ChangeNotifierProvider<WishlistViewModel>(

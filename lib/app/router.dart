@@ -13,6 +13,8 @@ import '../ui/category/category_list_page.dart';
 import '../ui/core/app_shell.dart';
 import '../ui/detail/item_detail_page.dart';
 import '../ui/home/beranda_page.dart';
+import '../ui/plan/plan_form_page.dart';
+import '../ui/plan/plan_result_page.dart';
 
 class PlaceholderPage extends StatelessWidget {
   final String title;
@@ -62,16 +64,13 @@ GoRouter createRouter(AuthViewModel auth) {
             ),
           ]),
           StatefulShellBranch(routes: [
-            GoRoute(
+                       GoRoute(
               path: '/rencana',
-              builder: (c, s) =>
-                  const AuthGate(child: PlaceholderPage('Form Paket Rencana')),
+              builder: (c, s) => const AuthGate(child: PlanFormPage()),
               routes: [
                 GoRoute(
                   path: 'hasil',
-                  builder: (c, s) => const AuthGate(
-                    child: PlaceholderPage('Hasil Itinerary'),
-                  ),
+                  builder: (c, s) => const AuthGate(child: PlanResultPage()),
                 ),
               ],
             ),
