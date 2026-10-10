@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 import 'package:provider/provider.dart';
-
+import '../auth/auth_view_model.dart';
 import '../../data/models/item.dart';
 import '../../data/models/plan.dart';
 import '../core/formatters.dart';
@@ -14,7 +14,8 @@ class PlanResultPage extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final plan = context.watch<PlanViewModel>().plan;
+    final vm = context.watch<PlanViewModel>();
+    final plan = vm.plan;
     return Scaffold(
       appBar: AppBar(title: const Text('Rencanamu')),
       body: plan == null
@@ -24,7 +25,79 @@ class PlanResultPage extends StatelessWidget {
               actionLabel: 'Susun Rencana',
               onAction: () => context.go('/rencana'),
             )
-          : _ResultBody(plan: plan),
+          : PlanBody(plan: plan),
+      bottomNavigationBar: plan == null ? null : _SaveBar(vm: vm),
+    );
+  }
+}
+
+class _SaveBar extends StatelessWidget {
+  const _SaveBar({required this.vm});
+
+  final PlanViewModel vm;
+
+  Future<void> _simpan(BuildContext context) async {
+    final uid = context.read<AuthViewModel>().user?.uid;
+    if (uid == null) return;
+    final messenger = ScaffoldMessenger.of(context);
+    final ok = await vm.simpan(uid);
+    if (ok) {
+      messenger.showSnackBar(
+        SnackBar(content: Text(vm.pesanSimpan ?? 'Rencana tersimpan.')),
+      );
+    }
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final cs = Theme.of(context).colorScheme;
+    return Material(
+      elevation: 3,
+      color: cs.surface,
+      child: SafeArea(
+        child: Padding(
+          padding: const EdgeInsets.fromLTRB(16, 8, 16, 12),
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              if (vm.errorSimpan != null)
+                Padding(
+                  padding: const EdgeInsets.only(bottom: 8),
+                  child: Text(
+                    vm.errorSimpan!,
+                    style: TextStyle(color: cs.error),
+                  ),
+                ),
+              Row(
+                children: [
+                  Expanded(
+                    child: FilledButton(
+                      onPressed: (vm.tersimpan || vm.menyimpan)
+                          ? null
+                          : () => _simpan(context),
+                      child: vm.menyimpan
+                          ? const SizedBox(
+                              height: 20,
+                              width: 20,
+                              child:
+                                  CircularProgressIndicator(strokeWidth: 2),
+                            )
+                          : Text(vm.tersimpan ? 'Tersimpan' : 'Simpan Rencana'),
+                    ),
+                  ),
+                  if (vm.tersimpan) ...[
+                    const SizedBox(width: 8),
+                    OutlinedButton(
+                      onPressed: () => context.push('/rencana/tersimpan'),
+                      child: const Text('Lihat'),
+                    ),
+                  ],
+                ],
+              ),
+            ],
+          ),
+        ),
+      ),
     );
   }
 }
@@ -54,8 +127,10 @@ String _biayaLabel(PlanEntry e) {
   }
 }
 
-class _ResultBody extends StatelessWidget {
-  const _ResultBody({required this.plan});
+class PlanBody extends StatelessWidget {
+  const PlanBody({
+    super.key,
+    required this.plan});
 
   final Plan plan;
 

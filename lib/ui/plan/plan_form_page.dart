@@ -89,7 +89,16 @@ class _PlanFormPageState extends State<PlanFormPage> {
         );
 
     return Scaffold(
-      appBar: AppBar(title: const Text('Susun Rencana')),
+           appBar: AppBar(
+        title: const Text('Susun Rencana'),
+        actions: [
+          IconButton(
+            tooltip: 'Rencana tersimpan',
+            icon: const Icon(Icons.bookmarks_outlined),
+            onPressed: () => context.push('/rencana/tersimpan'),
+          ),
+        ],
+      ),
       body: Column(
         children: [
           Expanded(

@@ -15,6 +15,7 @@ import '../ui/detail/item_detail_page.dart';
 import '../ui/home/beranda_page.dart';
 import '../ui/plan/plan_form_page.dart';
 import '../ui/plan/plan_result_page.dart';
+import '../ui/plan/saved_plans_page.dart';
 
 class PlaceholderPage extends StatelessWidget {
   final String title;
@@ -64,13 +65,25 @@ GoRouter createRouter(AuthViewModel auth) {
             ),
           ]),
           StatefulShellBranch(routes: [
-                       GoRoute(
+                                  GoRoute(
               path: '/rencana',
               builder: (c, s) => const AuthGate(child: PlanFormPage()),
               routes: [
                 GoRoute(
                   path: 'hasil',
                   builder: (c, s) => const AuthGate(child: PlanResultPage()),
+                ),
+                GoRoute(
+                  path: 'tersimpan',
+                  builder: (c, s) => const AuthGate(child: SavedPlansPage()),
+                  routes: [
+                    GoRoute(
+                      path: ':id',
+                      builder: (c, s) => AuthGate(
+                        child: SavedPlanPage(id: s.pathParameters['id']!),
+                      ),
+                    ),
+                  ],
                 ),
               ],
             ),

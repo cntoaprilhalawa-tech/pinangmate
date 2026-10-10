@@ -1,3 +1,5 @@
+import 'dart:async';
+
 import 'package:flutter/foundation.dart';
 
 import '../../data/models/item.dart';
@@ -36,6 +38,12 @@ class PlanViewModel extends ChangeNotifier {
 
   // Hasil
   Plan? plan;
+
+  // Penyimpanan rencana yang sedang tampil
+  bool menyimpan = false;
+  bool tersimpan = false;
+  String? pesanSimpan;
+  String? errorSimpan;
 
   Future<void> muatData() async {
     status = LoadStatus.loading;
@@ -106,8 +114,36 @@ class PlanViewModel extends ChangeNotifier {
       ),
       data,
     );
+    tersimpan = false;
+    menyimpan = false;
+    pesanSimpan = null;
+    errorSimpan = null;
     _notify();
     return true;
+  }
+
+  /// Simpan rencana yang sedang tampil ke akun [uid]. true kalau berhasil
+  /// (termasuk tersimpan di perangkat saat offline).
+  Future<bool> simpan(String uid) async {
+    final p = plan;
+    if (p == null || tersimpan || menyimpan) return false;
+    menyimpan = true;
+    errorSimpan = null;
+    pesanSimpan = null;
+    _notify();
+    try {
+      await _repo.simpan(uid, p).timeout(const Duration(seconds: 8));
+      tersimpan = true;
+    } on TimeoutException {
+      // Offline: tulisan sudah diantre di perangkat dan terkirim saat online.
+      tersimpan = true;
+      pesanSimpan = 'Tersimpan di perangkat. Akan disinkronkan saat online.';
+    } catch (_) {
+      errorSimpan = 'Gagal menyimpan. Coba lagi.';
+    }
+    menyimpan = false;
+    _notify();
+    return tersimpan;
   }
 
   void _notify() {
