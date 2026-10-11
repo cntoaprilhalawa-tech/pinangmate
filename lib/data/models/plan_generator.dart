@@ -102,12 +102,13 @@ int? _jamUntukSlot(Item item, int slot) {
   return null;
 }
 
-/// Ambil dari tiga kandidat teratas yang cocok jamnya, pilih yang paling
-/// dekat dengan posisi sebelumnya.
+/// Ambil dari tiga kandidat teratas yang cocok jamnya. Favorit dipilih lebih
+/// dulu; kalau tidak ada, pilih yang paling dekat dengan posisi sebelumnya.
 ({Item item, int menit})? _pilihUntukSlot(
   List<Item> sisa,
   int slot,
   _Titik? prev,
+  Set<String> pri,
 ) {
   final kandidat = <(Item, int)>[];
   for (final it in sisa) {
@@ -116,6 +117,11 @@ int? _jamUntukSlot(Item item, int slot) {
     if (kandidat.length == 3) break;
   }
   if (kandidat.isEmpty) return null;
+
+  for (final k in kandidat) {
+    if (pri.contains(k.$1.id)) return (item: k.$1, menit: k.$2);
+  }
+
   var terbaik = kandidat.first;
   if (prev != null) {
     var jarakTerbaik = haversineMeter(
@@ -136,6 +142,7 @@ int? _jamUntukSlot(Item item, int slot) {
 }
 
 /// Empat langkah: hitung hari, saring, urutkan, bagi per hari + total biaya.
+/// Item di [PlanInput.prioritas] (favorit) didahulukan.
 Plan buatRencana(PlanInput input, List<Item> semua) {
   final catatan = <String>[];
   final hari = math.min(14, math.max(1, input.durasi));
@@ -145,6 +152,7 @@ Plan buatRencana(PlanInput input, List<Item> semua) {
     for (var i = 0; i < hari; i++) DateTime(awal.year, awal.month, awal.day + i),
   ];
   final anggaran = input.anggaran < 0 ? 0 : input.anggaran;
+  final pri = input.prioritas;
 
   if (input.kategori.isEmpty) {
     return Plan(
@@ -158,13 +166,19 @@ Plan buatRencana(PlanInput input, List<Item> semua) {
   final aktif = semua.where((i) => i.aktif).toList();
   List<Item> dari(Kategori k) => aktif.where((i) => i.kategori == k).toList();
 
+  /// Favorit di depan, urutan lainnya tetap.
+  List<Item> favDulu(List<Item> list) => [
+        ...list.where((i) => pri.contains(i.id)),
+        ...list.where((i) => !pri.contains(i.id)),
+      ];
+
   // Penginapan: satu untuk seluruh perjalanan.
   PlanEntry? penginapan;
   if (input.kategori.contains(Kategori.penginapan)) {
     if (malam == 0) {
       catatan.add('Perjalanan 1 hari tidak perlu menginap.');
     } else {
-      final kandidat = dari(Kategori.penginapan)..sort(_prioritasInap);
+      final kandidat = favDulu(dari(Kategori.penginapan)..sort(_prioritasInap));
       if (kandidat.isEmpty) {
         catatan.add('Belum ada data penginapan.');
       } else {
@@ -219,9 +233,12 @@ Plan buatRencana(PlanInput input, List<Item> semua) {
         );
       }
     }
+    sisaWisata = favDulu(sisaWisata);
   }
 
-  final sisaKuliner = pakaiKuliner ? (dari(Kategori.kuliner)..sort(_prioritas)) : <Item>[];
+  final sisaKuliner = pakaiKuliner
+      ? favDulu(dari(Kategori.kuliner)..sort(_prioritas))
+      : <Item>[];
 
   final sisaEvent = <Item>[];
   if (pakaiEvent) {
@@ -232,6 +249,10 @@ Plan buatRencana(PlanInput input, List<Item> semua) {
       (a, b) => (a.tanggalMulai ?? DateTime(2100))
           .compareTo(b.tanggalMulai ?? DateTime(2100)),
     );
+    final urut = favDulu(sisaEvent);
+    sisaEvent
+      ..clear()
+      ..addAll(urut);
     if (sisaEvent.isEmpty) {
       catatan.add('Tidak ada event pada tanggal liburanmu.');
     }
@@ -278,7 +299,7 @@ Plan buatRencana(PlanInput input, List<Item> semua) {
 
     for (final s in slots) {
       final sumber = s.kategori == Kategori.wisata ? sisaWisata : sisaKuliner;
-      final pilih = _pilihUntukSlot(sumber, s.menit, posisi);
+      final pilih = _pilihUntukSlot(sumber, s.menit, posisi, pri);
       if (pilih == null) {
         if (s.kategori == Kategori.wisata) {
           kosongWisata++;
@@ -318,6 +339,7 @@ Plan buatRencana(PlanInput input, List<Item> semua) {
   }
 
   // Jaga anggaran: buang item berbiaya terbesar sampai muat.
+  // Yang bukan favorit dibuang lebih dulu.
   int hitungTotal() {
     var t = (penginapan?.biaya ?? 0) * malam;
     for (final h in hasilHari) {
@@ -333,15 +355,20 @@ Plan buatRencana(PlanInput input, List<Item> semua) {
       int? hi;
       int? ei;
       var maks = 0;
-      for (var h = 0; h < hasilHari.length; h++) {
-        for (var e = 0; e < hasilHari[h].length; e++) {
-          final b = hasilHari[h][e].biaya;
-          if (b > 0 && b >= maks) {
-            maks = b;
-            hi = h;
-            ei = e;
+      for (final termasukFavorit in const [false, true]) {
+        for (var h = 0; h < hasilHari.length; h++) {
+          for (var e = 0; e < hasilHari[h].length; e++) {
+            final entri = hasilHari[h][e];
+            if (!termasukFavorit && pri.contains(entri.itemId)) continue;
+            final b = entri.biaya;
+            if (b > 0 && b >= maks) {
+              maks = b;
+              hi = h;
+              ei = e;
+            }
           }
         }
+        if (hi != null) break;
       }
       if (hi == null || ei == null) break;
       final dibuang = hasilHari[hi].removeAt(ei);
@@ -349,6 +376,27 @@ Plan buatRencana(PlanInput input, List<Item> semua) {
     }
     if (hitungTotal() > anggaran) {
       catatan.add('Anggaran belum cukup walau sudah dikurangi. Naikkan anggaran.');
+    }
+  }
+
+  // Favorit yang akhirnya tidak masuk jadwal.
+  if (pri.isNotEmpty) {
+    final inapId = penginapan?.itemId;
+ final terjadwal = <String>{
+  for (final h in hasilHari)
+    for (final e in h) e.itemId,
+  ?inapId,
+};
+    final belum = <String>[
+      for (final it in aktif)
+        if (pri.contains(it.id) && !terjadwal.contains(it.id)) it.nama,
+    ]..sort();
+    if (belum.isNotEmpty) {
+      catatan.add(
+        'Tempat pilihanmu yang belum masuk jadwal: ${belum.join(', ')}. '
+        'Penyebabnya bisa jam buka, tanggal, anggaran, jumlah jadwal, '
+        'atau jenisnya tidak kamu sertakan.',
+      );
     }
   }
 

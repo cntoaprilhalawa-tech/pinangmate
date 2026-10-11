@@ -89,7 +89,7 @@ class _PlanFormPageState extends State<PlanFormPage> {
         );
 
     return Scaffold(
-           appBar: AppBar(
+      appBar: AppBar(
         title: const Text('Susun Rencana'),
         actions: [
           IconButton(
@@ -105,6 +105,54 @@ class _PlanFormPageState extends State<PlanFormPage> {
             child: ListView(
               padding: const EdgeInsets.fromLTRB(16, 0, 16, 16),
               children: [
+                if (vm.pilihan.isNotEmpty)
+                  Padding(
+                    padding: const EdgeInsets.only(top: 16),
+                    child: Card(
+                      margin: EdgeInsets.zero,
+                      color: cs.secondaryContainer,
+                      child: Padding(
+                        padding: const EdgeInsets.fromLTRB(16, 8, 8, 12),
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            Row(
+                              children: [
+                                Icon(Icons.luggage,
+                                    color: cs.onSecondaryContainer),
+                                const SizedBox(width: 8),
+                                Expanded(
+                                  child: Text(
+                                    '${vm.pilihan.length} tempat pilihanmu dijadwalkan lebih dulu',
+                                    style: TextStyle(
+                                      color: cs.onSecondaryContainer,
+                                      fontWeight: FontWeight.w600,
+                                    ),
+                                  ),
+                                ),
+                                TextButton(
+                                  onPressed: vm.kosongkanPilihan,
+                                  child: const Text('Kosongkan'),
+                                ),
+                              ],
+                            ),
+                            Wrap(
+                              spacing: 8,
+                              runSpacing: 4,
+                              children: [
+                                for (final it in vm.pilihan.values)
+                                  InputChip(
+                                    label: Text(it.nama),
+                                    onDeleted: () =>
+                                        vm.hapusDariRencana(it.id),
+                                  ),
+                              ],
+                            ),
+                          ],
+                        ),
+                      ),
+                    ),
+                  ),
                 judul('Tanggal berangkat'),
                 OutlinedButton.icon(
                   onPressed: () => _pilihTanggal(vm),

@@ -22,7 +22,7 @@ Future<void> main() async {
   await Firebase.initializeApp(
     options: DefaultFirebaseOptions.currentPlatform,
   );
-    FirebaseFirestore.instance.settings = const Settings(
+  FirebaseFirestore.instance.settings = const Settings(
     persistenceEnabled: true,
     cacheSizeBytes: Settings.CACHE_SIZE_UNLIMITED,
   );
@@ -34,11 +34,18 @@ Future<void> main() async {
     MultiProvider(
       providers: [
         Provider<AuthRepository>.value(value: authRepo),
+
+        // AuthViewModel HARUS di atas PlanViewModel supaya bisa dibaca.
+        ChangeNotifierProvider<AuthViewModel>.value(value: authVm),
+
         Provider<ItemRepository>(create: (_) => ItemRepository()),
         Provider<RatingRepository>(create: (_) => RatingRepository()),
         Provider<PlanRepository>(create: (_) => PlanRepository()),
         ChangeNotifierProvider<PlanViewModel>(
-          create: (c) => PlanViewModel(c.read<PlanRepository>()),
+          create: (c) => PlanViewModel(
+            c.read<PlanRepository>(),
+            c.read<AuthViewModel>(),
+          ),
         ),
         Provider<WishlistRepository>(create: (_) => WishlistRepository()),
         Provider<LocationService>(create: (_) => LocationService()),
@@ -50,7 +57,6 @@ Future<void> main() async {
           ),
         ),
         Provider<NominatimService>(create: (_) => NominatimService()),
-        ChangeNotifierProvider<AuthViewModel>.value(value: authVm),
       ],
       child: PinangMateApp(router: createRouter(authVm)),
     ),

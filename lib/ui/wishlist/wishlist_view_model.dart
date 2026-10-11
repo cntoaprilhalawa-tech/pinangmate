@@ -27,7 +27,22 @@ class WishlistViewModel extends ChangeNotifier {
   List<Item> items = const [];
   LoadStatus status = LoadStatus.empty;
 
+  /// Filter jenis di halaman Wishlist. null = semua.
+  Kategori? kategoriFilter;
+
   bool isFav(String id) => ids.contains(id);
+
+  /// Favorit yang sedang tampil sesuai filter.
+  List<Item> get tampil => kategoriFilter == null
+      ? items
+      : items.where((i) => i.kategori == kategoriFilter).toList();
+
+  int jumlah(Kategori k) => items.where((i) => i.kategori == k).length;
+
+  void setFilter(Kategori? k) {
+    kategoriFilter = (kategoriFilter == k) ? null : k; // tekan lagi untuk batal
+    _notify();
+  }
 
   void _onAuth() {
     final uid = _auth.user?.uid;
@@ -36,6 +51,7 @@ class WishlistViewModel extends ChangeNotifier {
     _sub?.cancel();
     ids = {};
     items = const [];
+    kategoriFilter = null;
     if (uid == null) {
       status = LoadStatus.empty;
       _notify();
@@ -58,6 +74,8 @@ class WishlistViewModel extends ChangeNotifier {
       if (seq != _seq) return;
       items = res.whereType<Item>().where((i) => i.aktif).toList()
         ..sort((a, b) => a.nama.compareTo(b.nama));
+      final f = kategoriFilter;
+      if (f != null && jumlah(f) == 0) kategoriFilter = null;
       status = items.isEmpty ? LoadStatus.empty : LoadStatus.ready;
     } catch (_) {
       if (seq != _seq) return;

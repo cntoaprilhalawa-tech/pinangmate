@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 
 import '../../data/models/item.dart';
 import '../core/launchers.dart';
+import '../plan/plan_button.dart';
 import '../wishlist/favorite_button.dart';
 
 class ContactBar extends StatelessWidget {
@@ -9,16 +10,17 @@ class ContactBar extends StatelessWidget {
 
   final Item item;
 
-  /// Tinggi kedua tombol (sama supaya sejajar).
+  /// Tinggi semua tombol (sama supaya sejajar).
   static const double _tinggi = 52;
 
-  /// Lebar tombol hati. Makin besar, tombol Hubungi makin pendek.
-  static const double _lebarFavorit = 60;
+  /// Lebar tombol hati dan koper.
+  static const double _lebarIkon = 52;
 
   @override
   Widget build(BuildContext context) {
     final kontak = item.kontak?.trim();
     final ada = kontak != null && kontak.isNotEmpty;
+    const ukuranIkon = Size(_lebarIkon, _tinggi);
     return Material(
       elevation: 3,
       color: Theme.of(context).colorScheme.surface,
@@ -45,8 +47,10 @@ class ContactBar extends StatelessWidget {
               FavoriteButton(
                 itemId: item.id,
                 outlined: true,
-                ukuran: const Size(_lebarFavorit, _tinggi),
+                ukuran: ukuranIkon,
               ),
+              const SizedBox(width: 8),
+              PlanButton(item: item, ukuran: ukuranIkon),
             ],
           ),
         ),

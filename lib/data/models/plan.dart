@@ -7,6 +7,7 @@ class PlanInput {
     this.anggaran = 0,
     this.kategori = const {Kategori.wisata, Kategori.kuliner},
     this.minat = const {},
+    this.prioritas = const {},
   });
 
   /// Tanggal berangkat.
@@ -23,6 +24,8 @@ class PlanInput {
 
   /// Tag minat wisata (huruf kecil). Kosong = semua wisata.
   final Set<String> minat;
+
+  final Set<String> prioritas;
 }
 
 class PlanEntry {

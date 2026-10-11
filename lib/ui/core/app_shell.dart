@@ -4,6 +4,7 @@ import 'package:provider/provider.dart';
 
 import '../auth/auth_gate.dart';
 import '../auth/auth_view_model.dart';
+import '../plan/plan_view_model.dart';
 
 class AppShell extends StatelessWidget {
   const AppShell({super.key, required this.shell});
@@ -21,28 +22,37 @@ class AppShell extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final jumlah = context.watch<PlanViewModel>().pilihan.length;
     return Scaffold(
       body: shell,
       bottomNavigationBar: NavigationBar(
         selectedIndex: shell.currentIndex,
         onDestinationSelected: (i) => _onTap(context, i),
-        destinations: const [
-          NavigationDestination(
+        destinations: [
+          const NavigationDestination(
             icon: Icon(Icons.home_outlined),
             selectedIcon: Icon(Icons.home),
             label: 'Beranda',
           ),
           NavigationDestination(
-            icon: Icon(Icons.luggage_outlined),
-            selectedIcon: Icon(Icons.luggage),
+            icon: Badge(
+              isLabelVisible: jumlah > 0,
+              label: Text('$jumlah'),
+              child: const Icon(Icons.luggage_outlined),
+            ),
+            selectedIcon: Badge(
+              isLabelVisible: jumlah > 0,
+              label: Text('$jumlah'),
+              child: const Icon(Icons.luggage),
+            ),
             label: 'Rencana',
           ),
-          NavigationDestination(
+          const NavigationDestination(
             icon: Icon(Icons.favorite_border),
             selectedIcon: Icon(Icons.favorite),
             label: 'Wishlist',
           ),
-          NavigationDestination(
+          const NavigationDestination(
             icon: Icon(Icons.person_outline),
             selectedIcon: Icon(Icons.person),
             label: 'Akun',

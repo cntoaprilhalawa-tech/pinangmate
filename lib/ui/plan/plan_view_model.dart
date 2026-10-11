@@ -7,16 +7,21 @@ import '../../data/models/open_hours.dart';
 import '../../data/models/plan.dart';
 import '../../data/models/plan_generator.dart';
 import '../../data/repositories/plan_repository.dart';
+import '../auth/auth_view_model.dart';
 import '../core/load_status.dart';
 
 class PlanViewModel extends ChangeNotifier {
-  PlanViewModel(this._repo) {
+  PlanViewModel(this._repo, this._auth) {
     final n = nowWib();
     mulai = DateTime(n.year, n.month, n.day);
+    _uid = _auth.user?.uid;
+    _auth.addListener(_onAuth);
     muatData();
   }
 
   final PlanRepository _repo;
+  final AuthViewModel _auth;
+  String? _uid;
   bool _disposed = false;
   DateTime? _dimuatPada;
 
@@ -31,6 +36,10 @@ class PlanViewModel extends ChangeNotifier {
   };
   final Set<String> minat = {};
 
+  /// Tempat yang dipilih lewat tombol koper, didahulukan oleh algoritma.
+  /// Urutan penambahan dipertahankan.
+  final Map<String, Item> pilihan = {};
+
   // Data tempat
   LoadStatus status = LoadStatus.loading;
   List<Item> data = const [];
@@ -44,6 +53,20 @@ class PlanViewModel extends ChangeNotifier {
   bool tersimpan = false;
   String? pesanSimpan;
   String? errorSimpan;
+
+  /// Ganti akun atau keluar: bersihkan draf supaya tidak bocor ke akun lain.
+  void _onAuth() {
+    final uid = _auth.user?.uid;
+    if (uid == _uid) return;
+    _uid = uid;
+    pilihan.clear();
+    plan = null;
+    tersimpan = false;
+    menyimpan = false;
+    pesanSimpan = null;
+    errorSimpan = null;
+    _notify();
+  }
 
   Future<void> muatData() async {
     status = LoadStatus.loading;
@@ -101,6 +124,47 @@ class PlanViewModel extends ChangeNotifier {
     _notify();
   }
 
+  // --- Tempat pilihan (tombol koper) ---
+
+  bool dalamRencana(String id) => pilihan.containsKey(id);
+
+  /// true kalau ditambahkan, false kalau dihapus. Jenis tempat otomatis
+  /// ikut dicentang supaya tidak tersaring.
+  bool toggleRencana(Item item) {
+    if (pilihan.containsKey(item.id)) {
+      pilihan.remove(item.id);
+      _notify();
+      return false;
+    }
+    pilihan[item.id] = item;
+    kategori.add(item.kategori);
+    _notify();
+    return true;
+  }
+
+  /// Mengembalikan jumlah yang benar-benar baru ditambahkan.
+  int tambahBanyak(Iterable<Item> items) {
+    var baru = 0;
+    for (final i in items) {
+      if (pilihan.containsKey(i.id)) continue;
+      pilihan[i.id] = i;
+      kategori.add(i.kategori);
+      baru++;
+    }
+    if (baru > 0) _notify();
+    return baru;
+  }
+
+  void hapusDariRencana(String id) {
+    if (pilihan.remove(id) != null) _notify();
+  }
+
+  void kosongkanPilihan() {
+    if (pilihan.isEmpty) return;
+    pilihan.clear();
+    _notify();
+  }
+
   /// Menyusun rencana dari isian form. false kalau belum bisa.
   bool susun() {
     if (kategori.isEmpty || status != LoadStatus.ready) return false;
@@ -111,6 +175,7 @@ class PlanViewModel extends ChangeNotifier {
         anggaran: anggaran,
         kategori: Set.of(kategori),
         minat: kategori.contains(Kategori.wisata) ? Set.of(minat) : <String>{},
+        prioritas: pilihan.keys.toSet(),
       ),
       data,
     );
@@ -153,6 +218,7 @@ class PlanViewModel extends ChangeNotifier {
   @override
   void dispose() {
     _disposed = true;
+    _auth.removeListener(_onAuth);
     super.dispose();
   }
 }
