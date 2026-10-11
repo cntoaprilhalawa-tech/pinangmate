@@ -2,11 +2,18 @@ import 'package:flutter/material.dart';
 
 import '../../data/models/item.dart';
 import '../core/launchers.dart';
+import '../wishlist/favorite_button.dart';
 
 class ContactBar extends StatelessWidget {
   const ContactBar({super.key, required this.item});
 
   final Item item;
+
+  /// Tinggi kedua tombol (sama supaya sejajar).
+  static const double _tinggi = 52;
+
+  /// Lebar tombol hati. Makin besar, tombol Hubungi makin pendek.
+  static const double _lebarFavorit = 60;
 
   @override
   Widget build(BuildContext context) {
@@ -17,14 +24,30 @@ class ContactBar extends StatelessWidget {
       color: Theme.of(context).colorScheme.surface,
       child: SafeArea(
         child: Padding(
-          padding: const EdgeInsets.fromLTRB(16, 8, 16, 12),
-          child: SizedBox(
-            width: double.infinity,
-            child: FilledButton.icon(
-              onPressed: ada ? () => _pilih(context, kontak) : null,
-              icon: const Icon(Icons.call_outlined),
-              label: Text(ada ? 'Hubungi Penyedia' : 'Kontak belum tersedia'),
-            ),
+          padding: const EdgeInsets.fromLTRB(20, 10, 20, 14),
+          child: Row(
+            children: [
+              Expanded(
+                child: SizedBox(
+                  height: _tinggi,
+                  child: FilledButton.icon(
+                    onPressed: ada ? () => _pilih(context, kontak) : null,
+                    icon: const Icon(Icons.call_outlined),
+                    label: Text(
+                      ada ? 'Hubungi Penyedia' : 'Kontak belum tersedia',
+                      maxLines: 1,
+                      overflow: TextOverflow.ellipsis,
+                    ),
+                  ),
+                ),
+              ),
+              const SizedBox(width: 12),
+              FavoriteButton(
+                itemId: item.id,
+                outlined: true,
+                ukuran: const Size(_lebarFavorit, _tinggi),
+              ),
+            ],
           ),
         ),
       ),

@@ -1,10 +1,11 @@
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 import 'package:provider/provider.dart';
-import '../../data/services/location_service.dart';
+
 import '../../data/models/item.dart';
 import '../../data/models/popular.dart';
 import '../../data/repositories/item_repository.dart';
+import '../../data/services/location_service.dart';
 import '../auth/auth_view_model.dart';
 import '../category/category_list_view_model.dart';
 import '../core/load_status.dart';
@@ -17,10 +18,10 @@ class BerandaPage extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return ChangeNotifierProvider(
-      create: (c) => CategoryListViewModel(       // ← baris 21
+      create: (c) => CategoryListViewModel(
         c.read<ItemRepository>(),
         Kategori.wisata,
-        c.read<LocationService>(),                // ← TAMBAH
+        c.read<LocationService>(),
       ),
       child: const _BerandaView(),
     );
@@ -59,7 +60,11 @@ class _BerandaView extends StatelessWidget {
       body: ListView(
         padding: const EdgeInsets.fromLTRB(16, 8, 16, 24),
         children: [
+          const _SearchBar(),
+          const SizedBox(height: 16),
           const _CategoryGrid(),
+          const SizedBox(height: 16),
+          const _PlanCard(),
           const SizedBox(height: 24),
           Row(
             children: [
@@ -79,6 +84,36 @@ class _BerandaView extends StatelessWidget {
           const SizedBox(height: 12),
           const _PopularSection(),
         ],
+      ),
+    );
+  }
+}
+
+class _SearchBar extends StatelessWidget {
+  const _SearchBar();
+
+  @override
+  Widget build(BuildContext context) {
+    final cs = Theme.of(context).colorScheme;
+    return Material(
+      color: cs.surfaceContainerHighest,
+      borderRadius: BorderRadius.circular(28),
+      clipBehavior: Clip.antiAlias,
+      child: InkWell(
+        onTap: () => context.push('/cari'),
+        child: Padding(
+          padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
+          child: Row(
+            children: [
+              Icon(Icons.search, color: cs.onSurfaceVariant),
+              const SizedBox(width: 12),
+              Text(
+                'Temukan destinasi…',
+                style: TextStyle(color: cs.onSurfaceVariant),
+              ),
+            ],
+          ),
+        ),
       ),
     );
   }
@@ -150,6 +185,53 @@ class _CategoryTile extends StatelessWidget {
             ),
           ],
         ),
+      ),
+    );
+  }
+}
+
+class _PlanCard extends StatelessWidget {
+  const _PlanCard();
+
+  @override
+  Widget build(BuildContext context) {
+    final cs = Theme.of(context).colorScheme;
+    final text = Theme.of(context).textTheme;
+    return Container(
+      padding: const EdgeInsets.all(16),
+      decoration: BoxDecoration(
+        color: cs.secondaryContainer,
+        borderRadius: BorderRadius.circular(16),
+        border: Border.all(color: cs.secondary),
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Text(
+            'Liburan ke Tanjungpinang?',
+            style: text.titleSmall?.copyWith(
+              fontWeight: FontWeight.w800,
+              color: cs.onSecondaryContainer,
+            ),
+          ),
+          const SizedBox(height: 4),
+          Text(
+            'Susun rencana harianmu sesuai anggaran dan minat.',
+            style: text.bodySmall?.copyWith(color: cs.onSecondaryContainer),
+          ),
+          const SizedBox(height: 12),
+          SizedBox(
+            width: double.infinity,
+            child: FilledButton(
+              style: FilledButton.styleFrom(
+                backgroundColor: cs.secondary,
+                foregroundColor: cs.onSecondary,
+              ),
+              onPressed: () => context.go('/rencana'),
+              child: const Text('Susun Rencana'),
+            ),
+          ),
+        ],
       ),
     );
   }

@@ -16,6 +16,7 @@ import '../ui/home/beranda_page.dart';
 import '../ui/plan/plan_form_page.dart';
 import '../ui/plan/plan_result_page.dart';
 import '../ui/plan/saved_plans_page.dart';
+import '../ui/search/search_page.dart';
 
 class PlaceholderPage extends StatelessWidget {
   final String title;
@@ -108,6 +109,7 @@ GoRouter createRouter(AuthViewModel auth) {
         path: '/beri-nilai/:id',
         builder: (c, s) => const PlaceholderPage('Beri Nilai'),
       ),
+            GoRoute(path: '/cari', builder: (c, s) => const SearchPage()),
       GoRoute(path: '/admin', builder: (c, s) => const AdminPage()),
       GoRoute(
         path: '/admin/form',
